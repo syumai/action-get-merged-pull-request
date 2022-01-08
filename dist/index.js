@@ -8458,7 +8458,7 @@ async function run() {
         (0, core_1.setOutput)('title', pull.title);
         (0, core_1.setOutput)('body', pull.body);
         (0, core_1.setOutput)('number', pull.number);
-        (0, core_1.setOutput)('labels', pull.labels?.join('\n'));
+        (0, core_1.setOutput)('labels', pull.labels);
         (0, core_1.setOutput)('assignees', pull.assignees?.join('\n'));
     }
     catch (e) {
@@ -8488,9 +8488,7 @@ async function getMergedPullRequest(githubToken, owner, repo, sha) {
         title: pull.title,
         body: pull.body ?? '',
         number: pull.number,
-        labels: pull.labels
-            .map(l => l.name)
-            .filter((name) => typeof name === 'string'),
+        labels: JSON.stringify(pull.labels),
         assignees: pull.assignees?.map(a => a.login) ?? []
     };
 }
