@@ -17,5 +17,5 @@ outputs:
   assignees:
     description: The list of assignees for the pull request. Separated with line breaks if there're multiple assignees.
 runs:
-  using: node12
+  using: node16
   main: dist/index.js
