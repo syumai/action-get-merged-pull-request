@@ -1,5 +1,5 @@
-import * as github from '@actions/github';
-import * as core from '@actions/core';
+import { context, getOctokit } from '@actions/github';
+import { debug, error, getInput, setFailed, setOutput } from '@actions/core';
 
 interface PullRequest {
   title: string;
@@ -12,24 +12,27 @@ interface PullRequest {
 async function run(): Promise<void> {
   try {
     const pull = await getMergedPullRequest(
-      core.getInput('github_token'),
-      github.context.repo.owner,
-      github.context.repo.repo,
-      github.context.sha
+      getInput('github_token'),
+      context.repo.owner,
+      context.repo.repo,
+      context.sha
     );
     if (!pull) {
-      core.debug('pull request not found');
+      debug('pull request not found');
       return;
     }
 
-    core.setOutput('title', pull.title);
-    core.setOutput('body', pull.body);
-    core.setOutput('number', pull.number);
-    core.setOutput('labels', pull.labels?.join('\n'));
-    core.setOutput('assignees', pull.assignees?.join('\n'));
+    setOutput('title', pull.title);
+    setOutput('body', pull.body);
+    setOutput('number', pull.number);
+    setOutput('labels', pull.labels?.join('\n'));
+    setOutput('assignees', pull.assignees?.join('\n'));
   } catch (e) {
-    core.error(e);
-    core.setFailed(e.message);
+    if (!(e instanceof Error)) {
+      throw e;
+    }
+    error(e);
+    setFailed(e.message);
   }
 }
 
@@ -39,14 +42,15 @@ async function getMergedPullRequest(
   repo: string,
   sha: string
 ): Promise<PullRequest | null> {
-  const client = new github.GitHub(githubToken);
+  const client = getOctokit(githubToken);
 
-  const resp = await client.pulls.list({
+  const resp = await client.rest.pulls.list({
     owner,
     repo,
     sort: 'updated',
     direction: 'desc',
     state: 'closed',
+    // eslint-disable-next-line camelcase
     per_page: 100
   });
 
@@ -57,10 +61,12 @@ async function getMergedPullRequest(
 
   return {
     title: pull.title,
-    body: pull.body,
+    body: pull.body ?? '',
     number: pull.number,
-    labels: pull.labels.map(l => l.name),
-    assignees: pull.assignees.map(a => a.login)
+    labels: pull.labels
+      .map(l => l.name)
+      .filter((name): name is string => typeof name === 'string'),
+    assignees: pull.assignees?.map(a => a.login) ?? []
   };
 }
 
