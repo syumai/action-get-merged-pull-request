@@ -5,8 +5,8 @@ interface PullRequest {
   title: string;
   body: string;
   number: number;
-  labels: string[] | null;
-  assignees: string[] | null;
+  labels: string;
+  assignees: string[];
 }
 
 async function run(): Promise<void> {
@@ -25,7 +25,7 @@ async function run(): Promise<void> {
     setOutput('title', pull.title);
     setOutput('body', pull.body);
     setOutput('number', pull.number);
-    setOutput('labels', pull.labels?.join('\n'));
+    setOutput('labels', pull.labels);
     setOutput('assignees', pull.assignees?.join('\n'));
   } catch (e) {
     if (!(e instanceof Error)) {
@@ -63,9 +63,7 @@ async function getMergedPullRequest(
     title: pull.title,
     body: pull.body ?? '',
     number: pull.number,
-    labels: pull.labels
-      .map(l => l.name)
-      .filter((name): name is string => typeof name === 'string'),
+    labels: JSON.stringify(pull.labels),
     assignees: pull.assignees?.map(a => a.login) ?? []
   };
 }
